@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Blueprint, jsonify, request, make_response
 
 from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
-from flask_jwt_extended.utils import get_jwt_header
+from flask_jwt_extended.utils import create_refresh_token, get_jwt_header
 from flask_jwt_extended.view_decorators import jwt_required
 
 main = Blueprint('main', __name__)
@@ -74,7 +74,7 @@ def register():
             print('not email')
             return jsonify({'message': 'Invalid email!'}), 400
 
-@main.route('/login', methods=['GET', 'POST'])
+@main.route('/login', methods=['POST'])
 def login():
     auth = request.authorization
 
@@ -94,13 +94,21 @@ def login():
         )
 
     if check_password_hash(person.password, auth.password):
-        access_token = create_access_token(identity=person.public_id)
-        return jsonify({"token": access_token})
+        access_token = create_access_token(identity=person.public_id, fresh=True)
+        refresh_token = create_refresh_token(identity=person.public_id)
+        return jsonify(access_token=access_token, refresh_token=refresh_token)
 
     return make_response(
             'Could not verify', 401,
             {'WWW-Authenticate': 'Basic realm = "Login required!"'}
         )
+
+@main.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh_token():
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity, fresh=False)
+    return jsonify(access_token=access_token)
 
 @main.route('/logout', methods = ['DELETE'])
 @jwt_required()
