@@ -49,7 +49,7 @@ def check_if_token_revoked(jwt_header, jwt_payload):
     return token is not None
 
 # AUTH STUFF
-@main.route('/register', methods=['POST'])
+@main.route('/api/auth/register', methods=['POST'])
 def register():
     # registers new user
     # refactor this shit - too much repetitive code
@@ -74,11 +74,12 @@ def register():
             print('not email')
             return jsonify({'message': 'Invalid email!'}), 400
 
-@main.route('/login', methods=['POST'])
+@main.route('/api/auth/login', methods=['POST'])
 def login():
     auth = request.authorization
 
     if not auth or not auth.username or not auth.password:
+        print('1')
         return make_response(
             'Could not verify', 401,
             {'WWW-Authenticate': 'Basic realm = "Login required!"'}
@@ -88,6 +89,7 @@ def login():
     person = Person.query.filter_by(email=auth.username).first()
 
     if not person:
+        print('2')
         return make_response(
             'Could not verify', 401,
             {'WWW-Authenticate': 'Basic realm = "Login required!"'}
@@ -100,17 +102,17 @@ def login():
 
     return make_response(
             'Could not verify', 401,
-            {'WWW-Authenticate': 'Basic realm = "Login required!"'}
+            {'WWW-Authenticate': 'Basic realm = "Login required!"'}, {'msg': '3'}
         )
 
-@main.route('/refresh', methods=['POST'])
+@main.route('/api/token/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh_token():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity, fresh=False)
     return jsonify(access_token=access_token)
 
-@main.route('/logout', methods = ['DELETE'])
+@main.route('/api/auth/logout', methods = ['DELETE'])
 @jwt_required()
 def logout():
     # insert logout stuff here
@@ -122,7 +124,7 @@ def logout():
     return jsonify(msg='You have logged out! JWT REVOKED')
 
 # USER STUFF
-@main.route('/<public_id>/dashboard', methods = ['GET'])
+@main.route('/api/<public_id>/dashboard', methods = ['GET'])
 @jwt_required()
 def user_dashboard(public_id):
     # if user is logged in show this page
@@ -140,7 +142,7 @@ def user_dashboard(public_id):
     
     return jsonify(output), 200
 
-@main.route('/<public_id>/update_profile', methods= ['PUT'])
+@main.route('/api/<public_id>/update_profile', methods= ['PUT'])
 @jwt_required()
 def update_profile(public_id):
     # update user credentials (email, password, username)
