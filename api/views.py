@@ -121,7 +121,7 @@ def logout():
     now = datetime.now()
     db.session.add(TokenBlockList(jti=jti, created_at=now))
     db.session.commit()
-    return jsonify(msg='You have logged out! JWT REVOKED')
+    return jsonify(msg='You have logged out! JWT REVOKED'), 200
 
 # USER STUFF
 @main.route('/api/<public_id>/dashboard', methods = ['GET'])
